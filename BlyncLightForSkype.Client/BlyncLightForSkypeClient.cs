@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Management;
 using Blynclight;
 using BlyncLightForSkype.Client.Extensions;

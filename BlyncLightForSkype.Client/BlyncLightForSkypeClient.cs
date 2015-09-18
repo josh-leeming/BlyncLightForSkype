@@ -79,13 +79,11 @@ namespace BlyncLightForSkype.Client
 
             OnStartup();
 
-            UsbDeviceChangeWatcher.Start();
-
             Skype.UserStatus += Skype_UserStatus;
-
             Skype.CallStatus += Skype_CallStatus;
-
             Skype.MessageStatus += Skype_MessageStatus;
+
+            UsbDeviceChangeWatcher.Start();
         }
 
         /// <summary>
@@ -166,9 +164,32 @@ namespace BlyncLightForSkype.Client
             }
         }
 
+        protected virtual void OnSkypeAttached()
+        {
+            Logger.Info("Skype Attached");
+
+            var status = Skype.CurrentUserStatus.ToUserStatus();
+            SetUserStatus(status);
+        }
+
         #endregion
 
         #region Skype Callbacks
+
+        private void Skype_AttachmentStatus(TAttachmentStatus Status)
+        {
+            if (Logger.IsDebugEnabled)
+            {
+                Logger.Debug("Skype_AttachmentStatus " + Status);
+            }
+
+            if (Status == TAttachmentStatus.apiAttachSuccess)
+            {
+                OnSkypeAttached();
+
+                ((_ISkypeEvents_Event)Skype).AttachmentStatus -= Skype_AttachmentStatus;
+            }
+        }
 
         private void Skype_MessageStatus(ChatMessage pMessage, TChatMessageStatus Status)
         {
@@ -229,11 +250,8 @@ namespace BlyncLightForSkype.Client
             BlynclightController = new BlynclightController();
 
             Skype = new Skype();
-            // Use skype protocol version 7 
-            Skype.Attach(7, false);
-
-            var status = Skype.CurrentUserStatus.ToUserStatus();
-            SetUserStatus(status);
+            ((_ISkypeEvents_Event)Skype).AttachmentStatus += Skype_AttachmentStatus;
+            Skype.Attach(8, false); //Attach async
 
             InitBlyncDevices();
 

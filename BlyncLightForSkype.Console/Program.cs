@@ -7,6 +7,8 @@ namespace BlyncLightForSkype.Console
 {
     class Program
     {
+        private static BlyncLightForSkypeClient blyncLightForSkypeClient = null;
+
         #region Nested classes to support running as service
         public const string ServiceName = "BlyncLightForSkype";
 
@@ -19,6 +21,9 @@ namespace BlyncLightForSkype.Console
 
             protected override void OnStart(string[] args)
             {
+#if DEBUG
+                System.Diagnostics.Debugger.Launch();
+#endif
                 Program.Start(args);
             }
 
@@ -53,7 +58,6 @@ namespace BlyncLightForSkype.Console
 
         private static void Start(string[] args)
         {
-            BlyncLightForSkypeClient blyncLightForSkypeClient = null;
             var container = TinyIoCContainer.Current;
             try
             {
@@ -63,10 +67,6 @@ namespace BlyncLightForSkype.Console
                 container.BuildUp(blyncLightForSkypeClient);
 
                 blyncLightForSkypeClient.StartClient();
-
-                System.Console.ReadLine();
-
-                blyncLightForSkypeClient.StopClient();
             }
             catch (Exception e)
             {
@@ -80,7 +80,14 @@ namespace BlyncLightForSkype.Console
 
         private static void Stop()
         {
-            // onstop code here
+            try
+            {
+                blyncLightForSkypeClient.StopClient();
+            }
+            catch (Exception e)
+            {
+                System.Console.WriteLine(e.Message);
+            }
         }
     }
 }

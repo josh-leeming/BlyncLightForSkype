@@ -1,5 +1,5 @@
 ﻿using System;
-using System.ServiceProcess;
+using System.Runtime.InteropServices;
 using BlyncLightForSkype.Client;
 using TinyIoC;
 
@@ -9,51 +9,23 @@ namespace BlyncLightForSkype.Console
     {
         private static BlyncLightForSkypeClient blyncLightForSkypeClient = null;
 
-        #region Nested classes to support running as service
-        public const string ServiceName = "BlyncLightForSkype";
+        private static ConsoleEventDelegate consoleEventCallbackHandler;   
+        private delegate bool ConsoleEventDelegate(int eventType);
 
-        public class Service : ServiceBase
-        {
-            public Service()
-            {
-                ServiceName = Program.ServiceName;
-            }
-
-            protected override void OnStart(string[] args)
-            {
-#if DEBUG
-                System.Diagnostics.Debugger.Launch();
-#endif
-                Program.Start(args);
-            }
-
-            protected override void OnStop()
-            {
-                Program.Stop();
-            }
-        }
-        #endregion
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
 
         static void Main(string[] args)
         {
-            if (!Environment.UserInteractive)
-            {
-                // running as service
-                using (var service = new Service())
-                {
-                    ServiceBase.Run(service);
-                }
-            }
-            else
-            {
-                // running as console app
-                Start(args);
+            Start(args);
 
-                System.Console.WriteLine("Press any key to stop...");
-                System.Console.ReadKey(true);
+            consoleEventCallbackHandler = ConsoleEventCallback;
+            SetConsoleCtrlHandler(consoleEventCallbackHandler, true);
 
-                Stop();
-            }
+            System.Console.WriteLine("Press any key to stop...");
+            System.Console.ReadKey(true);
+
+            Stop();
         }
 
         private static void Start(string[] args)
@@ -88,6 +60,15 @@ namespace BlyncLightForSkype.Console
             {
                 System.Console.WriteLine(e.Message);
             }
+        }
+
+        private static bool ConsoleEventCallback(int eventType)
+        {
+            if (eventType == 2)
+            {
+                Stop();
+            }
+            return false;
         }
     }
 }

@@ -2,6 +2,6 @@
 {
     public enum UserStatus
     {
-        None, Offline, Online, Away, Busy
+        None, Connecting, Offline, Online, Away, Busy
     }
 }

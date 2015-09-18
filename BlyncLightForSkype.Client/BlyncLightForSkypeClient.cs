@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Text.RegularExpressions;
 using System.Management;
 using Blynclight;
 using BlyncLightForSkype.Client.Extensions;
@@ -21,19 +22,24 @@ namespace BlyncLightForSkype.Client
         #region Props
 
         /// <summary>
+        /// True if the client is running
+        /// </summary>
+        public bool IsRunning { get; private set; }
+
+        /// <summary>
         /// Regular expression object for checking messages and changing status to away
         /// </summary>
-        public Regex MsgAwayRegex { get; protected set; }
+        protected Regex MsgAwayRegex { get; private set; }
 
         /// <summary>
         /// Triggered by Skype Call Status change
         /// </summary>
-        public CallStatus CallStatus { get; protected set; }
+        protected CallStatus CallStatus { get; private set; }
 
         /// <summary>
         /// Triggered by Skype User Status change
         /// </summary>
-        public UserStatus UserStatus { get; protected set; }
+        protected UserStatus UserStatus { get; private set; }
 
         /// <summary>
         /// Handler to Blynclight 
@@ -72,6 +78,13 @@ namespace BlyncLightForSkype.Client
         /// </summary>
         public virtual void StartClient()
         {
+            if (IsRunning)
+            {
+                throw new InvalidOperationException("Client is currently running");    
+            }
+
+            IsRunning = true;
+
             if (isInitialised == false)
             {
                 InitClient();
@@ -84,6 +97,8 @@ namespace BlyncLightForSkype.Client
             Skype.MessageStatus += Skype_MessageStatus;
 
             UsbDeviceChangeWatcher.Start();
+
+            InitBlyncDevices();
         }
 
         /// <summary>
@@ -91,14 +106,19 @@ namespace BlyncLightForSkype.Client
         /// </summary>
         public virtual void StopClient()
         {
+            if (IsRunning == false)
+            {
+                throw new InvalidOperationException("Client is not running");
+            }
+
+            IsRunning = false;
+
             OnShutdown();
 
             UsbDeviceChangeWatcher.Stop();
 
             Skype.UserStatus -= Skype_UserStatus;
-
             Skype.CallStatus -= Skype_CallStatus;
-
             Skype.MessageStatus -= Skype_MessageStatus;
 
             BlynclightController.ResetAll();
@@ -170,6 +190,11 @@ namespace BlyncLightForSkype.Client
 
             var status = Skype.CurrentUserStatus.ToUserStatus();
             SetUserStatus(status);
+
+            if (Skype.ActiveCalls.Count > 0)
+            {
+                SetCallStatus(CallStatus.InProgress);
+            }
         }
 
         #endregion
@@ -249,11 +274,15 @@ namespace BlyncLightForSkype.Client
 
             BlynclightController = new BlynclightController();
 
-            Skype = new Skype();
-            ((_ISkypeEvents_Event)Skype).AttachmentStatus += Skype_AttachmentStatus;
-            Skype.Attach(8, false); //Attach async
+            UserStatus = UserStatus.Connecting;
 
             InitBlyncDevices();
+
+            Skype = new Skype();
+
+            //Attach async
+            ((_ISkypeEvents_Event)Skype).AttachmentStatus += Skype_AttachmentStatus;
+            Skype.Attach(8, false); 
 
             UsbDeviceChangeWatcher = new ManagementEventWatcher();
             var query = new WqlEventQuery("SELECT * FROM Win32_DeviceChangeEvent WHERE EventType = 2 or EventType = 3 GROUP WITHIN 1");
@@ -293,6 +322,7 @@ namespace BlyncLightForSkype.Client
                 case UserStatus.Online:
                     BlynclightController.SetStatusOnline();
                     break;
+                case UserStatus.Connecting:
                 case UserStatus.Offline:
                     BlynclightController.SetStatusOffline();
                     break;

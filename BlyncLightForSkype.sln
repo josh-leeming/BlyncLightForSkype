@@ -14,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{94C954
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlyncLightForSkype.App", "BlyncLightForSkype.App\BlyncLightForSkype.App.csproj", "{2A356EF7-29E9-4958-B696-9EFD3389E727}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +34,10 @@ Global
 		{3F0F92C2-597D-451B-9222-B9C5B070AB42}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F0F92C2-597D-451B-9222-B9C5B070AB42}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F0F92C2-597D-451B-9222-B9C5B070AB42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A356EF7-29E9-4958-B696-9EFD3389E727}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A356EF7-29E9-4958-B696-9EFD3389E727}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A356EF7-29E9-4958-B696-9EFD3389E727}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A356EF7-29E9-4958-B696-9EFD3389E727}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

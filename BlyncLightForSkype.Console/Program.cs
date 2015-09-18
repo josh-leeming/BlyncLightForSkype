@@ -53,12 +53,13 @@ namespace BlyncLightForSkype.Console
 
         private static void Start(string[] args)
         {
+            BlyncLightForSkypeClient blyncLightForSkypeClient = null;
             var container = TinyIoCContainer.Current;
             try
             {
                 IoC.ConfigureContainer(container);
 
-                var blyncLightForSkypeClient = container.Resolve<BlyncLightForSkypeClient>();
+                blyncLightForSkypeClient = container.Resolve<BlyncLightForSkypeClient>();
                 container.BuildUp(blyncLightForSkypeClient);
 
                 blyncLightForSkypeClient.StartClient();
@@ -69,6 +70,10 @@ namespace BlyncLightForSkype.Console
             }
             catch (Exception e)
             {
+                if (blyncLightForSkypeClient != null)
+                {
+                    blyncLightForSkypeClient.StopClient();
+                }
                 System.Console.WriteLine(e.Message);
             }
         }

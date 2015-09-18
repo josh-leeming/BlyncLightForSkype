@@ -51,7 +51,7 @@ namespace BlyncLightForSkype.Client.Extensions
             }
         }
 
-        public static void SetStatusDoNotDisturb(this BlynclightController controller)
+        public static void SetStatusBusy(this BlynclightController controller)
         {
             for (var i = 0; i < controller.aoDevInfo.Length; i++)
             {

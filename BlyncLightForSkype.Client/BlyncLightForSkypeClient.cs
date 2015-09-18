@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Text.RegularExpressions;
+using System.Management;
 using Blynclight;
 using BlyncLightForSkype.Client.Extensions;
 using BlyncLightForSkype.Client.Interfaces;
@@ -20,14 +22,19 @@ namespace BlyncLightForSkype.Client
         #region Props
 
         /// <summary>
-        /// Triggered by typing the message (pi) into chat
+        /// Regular expression object for checking messages and changing status to away
         /// </summary>
-        public bool IsOnLunch { get; protected set; }
+        public Regex MsgAwayRegex { get; protected set; }
 
         /// <summary>
         /// Triggered by Skype Call Status change
         /// </summary>
         public CallStatus CallStatus { get; protected set; }
+
+        /// <summary>
+        /// Triggered by Skype User Status change
+        /// </summary>
+        public UserStatus UserStatus { get; protected set; }
 
         /// <summary>
         /// Handler to Blynclight 
@@ -38,6 +45,11 @@ namespace BlyncLightForSkype.Client
         /// Skype4COM
         /// </summary>
         protected Skype Skype { get; private set; }
+
+        /// <summary>
+        /// Watches for Win32_DeviceChangeEvents
+        /// </summary>
+        protected ManagementEventWatcher UsbDeviceChangeWatcher { get; private set; }
 
         /// <summary>
         /// True if the client has been initialised
@@ -68,13 +80,13 @@ namespace BlyncLightForSkype.Client
 
             OnStartup();
 
+            UsbDeviceChangeWatcher.Start();
+
             Skype.UserStatus += Skype_UserStatus;
 
             Skype.CallStatus += Skype_CallStatus;
 
             Skype.MessageStatus += Skype_MessageStatus;
-
-            SetLightBasedOnSkypeStatus(Skype.CurrentUserStatus);
         }
 
         /// <summary>
@@ -83,6 +95,14 @@ namespace BlyncLightForSkype.Client
         public virtual void StopClient()
         {
             OnShutdown();
+
+            UsbDeviceChangeWatcher.Stop();
+
+            Skype.UserStatus -= Skype_UserStatus;
+
+            Skype.CallStatus -= Skype_CallStatus;
+
+            Skype.MessageStatus -= Skype_MessageStatus;
 
             BlynclightController.ResetAll();
         } 
@@ -105,36 +125,45 @@ namespace BlyncLightForSkype.Client
             Logger.Info("Shutting down");
         }
 
-        protected virtual void OnLunch()
-        {
-            Logger.Info("Lunch " + IsOnLunch);
-
-            Skype.ChangeUserStatus(IsOnLunch ? TUserStatus.cusAway : TUserStatus.cusOnline);
-        }
-
         protected virtual void OnCall()
         {
             Logger.Info("Call " + CallStatus);
 
             if (CallStatus == CallStatus.None)
             {
-                SetLightBasedOnSkypeStatus(Skype.CurrentUserStatus);
+                SetLightBasedOnStatus();
             }
-
-            switch (CallStatus)
+            else
             {
-                case CallStatus.InProgress:
-                    BlynclightController.SetStatusCallInProgress();
-                    break;
-                case CallStatus.Ringing:
-                    BlynclightController.SetStatusRinging();
-                    break;
-                case CallStatus.Missed:
-                    BlynclightController.SetStatusCallMissed();
-                    break;
-                case CallStatus.None:
-                    SetLightBasedOnSkypeStatus(Skype.CurrentUserStatus);
-                    break;
+                SetLightBasedOnCall();
+            }
+        }
+
+        protected virtual void OnStatus()
+        {
+            Logger.Info("Status " + UserStatus);
+
+            if (CallStatus == CallStatus.None)
+            {
+                SetLightBasedOnStatus();
+            }
+            else
+            {
+                SetLightBasedOnCall();
+            }
+        }
+
+        protected virtual void OnBlyncLightConnected()
+        {
+            Logger.Info("BlyncLight Connected");
+
+            if (CallStatus == CallStatus.None)
+            {
+                SetLightBasedOnStatus();
+            }
+            else
+            {
+                SetLightBasedOnCall();
             }
         }
 
@@ -151,9 +180,10 @@ namespace BlyncLightForSkype.Client
 
             if (Status == TChatMessageStatus.cmsSending)
             {
-                if (pMessage.Body.Equals("(pi)"))
+                if (MsgAwayRegex.IsMatch(pMessage.Body))
                 {
-                    SetOnLunch(true);
+                    Skype.ChangeUserStatus(TUserStatus.cusAway);
+                    SetUserStatus(UserStatus.Away);
                 }
             }
         }
@@ -165,10 +195,9 @@ namespace BlyncLightForSkype.Client
                 Logger.Debug("Skype_UserStatus " + Status);
             }
 
-            if (CallStatus == CallStatus.None)
-            {
-                SetLightBasedOnSkypeStatus(Status);
-            }
+            var status = Status.ToUserStatus();
+
+            SetUserStatus(status);
         }
 
         private void Skype_CallStatus(Call pCall, TCallStatus Status)
@@ -178,25 +207,17 @@ namespace BlyncLightForSkype.Client
                 Logger.Debug("Skype_CallStatus " + Status);
             }
 
-            CallStatus status;
+            var status = Status.ToCallStatus();
 
-            switch (Status)
-            {
-                case TCallStatus.clsInProgress:
-                    status = CallStatus.InProgress;
-                    break;
-                case TCallStatus.clsRinging:
-                    status = CallStatus.Ringing;
-                    break;
-                case TCallStatus.clsMissed:
-                    status = CallStatus.Missed;
-                    break;
-                default:
-                    status = CallStatus.None;
-                    break;
-            }
+            SetCallStatus(status);
+        } 
 
-            SetOnCall(status);
+        #endregion
+
+        #region USB Device Callbacks
+        void DeviceChangeEvent(object sender, EventArrivedEventArgs e)
+        {
+            InitBlyncDevices();
         } 
 
         #endregion
@@ -206,16 +227,23 @@ namespace BlyncLightForSkype.Client
         {
             OnInitialise();
 
+            BlynclightController = new BlynclightController();
+
             Skype = new Skype();
             // Use skype protocol version 7 
             Skype.Attach(7, false);
 
-            BlynclightController = new BlynclightController();
-            var deviceCount = BlynclightController.InitBlyncDevices();
-            if (deviceCount == 0)
-            {
-                throw new Exception("No BlyncLight Devices detected");
-            }
+            var status = Skype.CurrentUserStatus.ToUserStatus();
+            SetUserStatus(status);
+
+            InitBlyncDevices();
+
+            UsbDeviceChangeWatcher = new ManagementEventWatcher();
+            var query = new WqlEventQuery("SELECT * FROM Win32_DeviceChangeEvent WHERE EventType = 2 or EventType = 3 GROUP WITHIN 1");
+            UsbDeviceChangeWatcher.EventArrived += DeviceChangeEvent;
+            UsbDeviceChangeWatcher.Query = query;
+
+            MsgAwayRegex = new Regex(@"^(\(pi\)|\(brb\)|\(coffee\))$", RegexOptions.IgnoreCase);
 
             isInitialised = true;
         }
@@ -223,47 +251,72 @@ namespace BlyncLightForSkype.Client
 
         #region Private Methods
 
-        /// <summary>
-        /// Pretty much what it says on the tin
-        /// </summary>
-        /// <param name="Status"></param>
-        private void SetLightBasedOnSkypeStatus(TUserStatus Status)
-        {
-            switch (Status)
-            {
-                case TUserStatus.cusAway:
-                    BlynclightController.SetStatusAway();
-                    break;
-                case TUserStatus.cusOnline:
-                    BlynclightController.SetStatusOnline();
-                    break;
-                case TUserStatus.cusDoNotDisturb:
-                    BlynclightController.SetStatusDoNotDisturb();
-                    break;
-                case TUserStatus.cusOffline:
-                    BlynclightController.SetStatusOffline();
-                    break;
-                default:
-                    BlynclightController.ResetAll();
-                    break;
-            }
-        }
-
-        private void SetOnLunch(bool onLunch)
-        {
-            if (onLunch != IsOnLunch)
-            {
-                IsOnLunch = onLunch;
-                OnLunch();
-            }
-        }
-
-        private void SetOnCall(CallStatus status)
+        private void SetCallStatus(CallStatus status)
         {
             if (status != CallStatus)
             {
                 CallStatus = status;
                 OnCall();
+            }
+        }
+
+        private void SetUserStatus(UserStatus status)
+        {
+            if (status != UserStatus)
+            {
+                UserStatus = status;
+                OnStatus();
+            }
+        }
+
+        private void SetLightBasedOnStatus()
+        {
+            switch (UserStatus)
+            {
+                case UserStatus.Online:
+                    BlynclightController.SetStatusOnline();
+                    break;
+                case UserStatus.Offline:
+                    BlynclightController.SetStatusOffline();
+                    break;
+                case UserStatus.Away:
+                    BlynclightController.SetStatusAway();
+                    break;
+                case UserStatus.Busy:
+                    BlynclightController.SetStatusBusy();
+                    break;
+                case UserStatus.None:
+                    BlynclightController.ResetAll();
+                    break;
+            }
+        }
+
+        private void SetLightBasedOnCall()
+        {
+            switch (CallStatus)
+            {
+                case CallStatus.InProgress:
+                    BlynclightController.SetStatusCallInProgress();
+                    break;
+                case CallStatus.Ringing:
+                    BlynclightController.SetStatusRinging();
+                    break;
+                case CallStatus.Missed:
+                    BlynclightController.SetStatusCallMissed();
+                    break;
+            }
+        }
+
+        private void InitBlyncDevices()
+        {
+            var deviceCount = BlynclightController.InitBlyncDevices();
+            if (deviceCount == 0)
+            {
+                Logger.Warn("BlyncLight Disonnected");
+            }
+            else
+            {
+                OnBlyncLightConnected();
             }
         } 
         #endregion

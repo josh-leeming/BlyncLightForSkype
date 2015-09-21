@@ -1,4 +1,5 @@
-﻿using SKYPE4COMLib;
+﻿using BlyncLightForSkype.Client.Models;
+using SKYPE4COMLib;
 
 namespace BlyncLightForSkype.Client.Extensions
 {

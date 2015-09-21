@@ -121,10 +121,13 @@
   <data name="TrayIcon_Running" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\TrayIcon_Running.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="TrayIcon_Running_Text" xml:space="preserve">
+    <value>BlyncLightForSkype Running</value>
+  </data>
   <data name="TrayIcon_Stopped" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\TrayIcon_Stopped.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="TrayIcon_Text" xml:space="preserve">
-    <value>BlyncLightForSkype</value>
+  <data name="TrayIcon_Stopped_Text" xml:space="preserve">
+    <value>BlyncLightForSkype Stopped</value>
   </data>
 </root>

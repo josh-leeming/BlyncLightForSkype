@@ -40,7 +40,7 @@ namespace BlyncLightForSkype.App
             public void Display()
             {
                 notifyIcon.Icon = Resources.TrayIcon_Running;
-                notifyIcon.Text = Resources.TrayIcon_Text;
+                notifyIcon.Text = Resources.TrayIcon_Running_Text;
                 notifyIcon.Visible = true;
 
                 notifyIcon.ContextMenuStrip = new ContextMenuStrip();
@@ -55,6 +55,7 @@ namespace BlyncLightForSkype.App
                     {
                         blyncLightForSkypeClient.StartClient();
                         notifyIcon.Icon = Resources.TrayIcon_Running;
+                        notifyIcon.Text = Resources.TrayIcon_Running_Text;
                         start.Enabled = false;
                         stop.Enabled = true;
                     }
@@ -66,6 +67,7 @@ namespace BlyncLightForSkype.App
                     {
                         blyncLightForSkypeClient.StopClient();
                         notifyIcon.Icon = Resources.TrayIcon_Stopped;
+                        notifyIcon.Text = Resources.TrayIcon_Stopped_Text;
                         start.Enabled = true;
                         stop.Enabled = false;
                     }

@@ -71,6 +71,15 @@ namespace BlyncLightForSkype.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to BlyncLightForSkype Running.
+        /// </summary>
+        internal static string TrayIcon_Running_Text {
+            get {
+                return ResourceManager.GetString("TrayIcon_Running_Text", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
         internal static System.Drawing.Icon TrayIcon_Stopped {
@@ -81,11 +90,11 @@ namespace BlyncLightForSkype.App.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to BlyncLightForSkype.
+        ///   Looks up a localized string similar to BlyncLightForSkype Stopped.
         /// </summary>
-        internal static string TrayIcon_Text {
+        internal static string TrayIcon_Stopped_Text {
             get {
-                return ResourceManager.GetString("TrayIcon_Text", resourceCulture);
+                return ResourceManager.GetString("TrayIcon_Stopped_Text", resourceCulture);
             }
         }
     }

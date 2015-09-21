@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using BlyncLightForSkype.App;
 using BlyncLightForSkype.Client;
 using TinyIoC;
 
@@ -42,7 +43,7 @@ namespace BlyncLightForSkype.Console
             }
             catch (Exception e)
             {
-                if (blyncLightForSkypeClient != null)
+                if (blyncLightForSkypeClient != null && blyncLightForSkypeClient.IsRunning)
                 {
                     blyncLightForSkypeClient.StopClient();
                 }

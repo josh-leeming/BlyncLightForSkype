@@ -44,15 +44,29 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BlyncLightForSkypeClient.cs" />
-    <Compile Include="CallStatus.cs" />
+    <Compile Include="BlyncLightMessageRouter.cs" />
+    <Compile Include="BlyncLightManager.cs" />
+    <Compile Include="Interfaces\IClientLifecycleCallbackHandler.cs" />
+    <Compile Include="Interfaces\IBlyncLightMessage.cs" />
+    <Compile Include="Interfaces\ISkypeMessage.cs" />
+    <Compile Include="Messages\BlyncLightMessage.cs" />
+    <Compile Include="Messages\SkypeCallStatusMessage.cs" />
+    <Compile Include="Messages\SkypeUserStatusMessage.cs" />
+    <Compile Include="Models\CallStatus.cs" />
     <Compile Include="Extensions\BlynclightControllerExtensions.cs" />
     <Compile Include="Extensions\SkypeCallStatusExtensions.cs" />
     <Compile Include="Extensions\SkypeUserStatusExtensions.cs" />
-    <Compile Include="FlashSpeed.cs" />
+    <Compile Include="Models\FlashSpeed.cs" />
     <Compile Include="Interfaces\ILogHandler.cs" />
+    <Compile Include="Interfaces\IMessageRouter.cs" />
+    <Compile Include="Messages\EventSubscription.cs" />
+    <Compile Include="Messages\MessageSubscriptionToken.cs" />
+    <Compile Include="Messages\SubscriptionPriority.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SkypeManager.cs" />
+    <Compile Include="SkypeMessageRouter.cs" />
     <Compile Include="TinyIoC.cs" />
-    <Compile Include="UserStatus.cs" />
+    <Compile Include="Models\UserStatus.cs" />
   </ItemGroup>
   <ItemGroup>
     <COMReference Include="SKYPE4COMLib">

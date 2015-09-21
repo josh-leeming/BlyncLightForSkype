@@ -1,21 +1,30 @@
 ﻿using System;
-using System.Text.RegularExpressions;
+using System.Collections.Generic;
 using System.Management;
 using Blynclight;
 using BlyncLightForSkype.Client.Extensions;
 using BlyncLightForSkype.Client.Interfaces;
-using SKYPE4COMLib;
+using BlyncLightForSkype.Client.Messages;
+using BlyncLightForSkype.Client.Models;
 
 namespace BlyncLightForSkype.Client
 {
     /// <summary>
-    /// Basic client that responds to Skype events
+    /// Basic client that responds to Skype events and updates a BlyncLight device
     /// </summary>
     public class BlyncLightForSkypeClient
     {
         #region Dependencies
 
+        public IMessageRouter<ISkypeMessage> SkypeMessageRouter { get; set; }
+
+        public IMessageRouter<IBlyncLightMessage> BlyncLightMessageRouter { get; set; }
+
         public ILogHandler Logger { get; set; }
+        
+        public List<IClientLifecycleCallbackHandler> ApplicationLifecycleCallbacks { get; set; }
+
+        public BlynclightController BlynclightController { get; set; }
 
         #endregion
 
@@ -27,34 +36,14 @@ namespace BlyncLightForSkype.Client
         public bool IsRunning { get; private set; }
 
         /// <summary>
-        /// Regular expression object for checking messages and changing status to away
+        /// Skype Call Status
         /// </summary>
-        protected Regex MsgAwayRegex { get; private set; }
+        private CallStatus CallStatus = CallStatus.None;
 
         /// <summary>
-        /// Triggered by Skype Call Status change
+        /// Skype User Status
         /// </summary>
-        protected CallStatus CallStatus { get; private set; }
-
-        /// <summary>
-        /// Triggered by Skype User Status change
-        /// </summary>
-        protected UserStatus UserStatus { get; private set; }
-
-        /// <summary>
-        /// Handler to Blynclight 
-        /// </summary>
-        protected BlynclightController BlynclightController { get; private set; }
-
-        /// <summary>
-        /// Skype4COM
-        /// </summary>
-        protected Skype Skype { get; private set; }
-
-        /// <summary>
-        /// Watches for Win32_DeviceChangeEvents
-        /// </summary>
-        protected ManagementEventWatcher UsbDeviceChangeWatcher { get; private set; }
+        private UserStatus UserStatus = UserStatus.Connecting;
 
         /// <summary>
         /// True if the client has been initialised
@@ -63,20 +52,12 @@ namespace BlyncLightForSkype.Client
 
         #endregion
 
-        #region Ctor
-
-        public BlyncLightForSkypeClient(ILogHandler logger)
-        {
-            Logger = logger;
-        }
-
-        #endregion
-
         #region Public Methods
+
         /// <summary>
         /// Start responding to Skype events
         /// </summary>
-        public virtual void StartClient()
+        public void StartClient()
         {
             if (IsRunning)
             {
@@ -92,19 +73,15 @@ namespace BlyncLightForSkype.Client
 
             OnStartup();
 
-            Skype.UserStatus += Skype_UserStatus;
-            Skype.CallStatus += Skype_CallStatus;
-            Skype.MessageStatus += Skype_MessageStatus;
+            UpdateBlyncLight();
 
-            UsbDeviceChangeWatcher.Start();
-
-            InitBlyncDevices();
+            Logger.Info("Client started");
         }
 
         /// <summary>
         /// Reset Blynclight
         /// </summary>
-        public virtual void StopClient()
+        public void StopClient()
         {
             if (IsRunning == false)
             {
@@ -115,207 +92,121 @@ namespace BlyncLightForSkype.Client
 
             OnShutdown();
 
-            UsbDeviceChangeWatcher.Stop();
-
-            Skype.UserStatus -= Skype_UserStatus;
-            Skype.CallStatus -= Skype_CallStatus;
-            Skype.MessageStatus -= Skype_MessageStatus;
-
             BlynclightController.ResetAll();
+
+            Logger.Info("Client stopped");
         } 
+
         #endregion
 
         #region Lifecycle
 
-        protected virtual void OnInitialise()
+        protected void OnInitialise()
         {
-            Logger.Info("Initialising");
+            ApplicationLifecycleCallbacks.ForEach(handler => handler.OnInitialise());
         }
 
-        protected virtual void OnStartup()
+        protected void OnStartup()
         {
-            Logger.Info("Starting");
+            ApplicationLifecycleCallbacks.ForEach(handler => handler.OnStartup());
         }
 
-        protected virtual void OnShutdown()
+        protected void OnShutdown()
         {
-            Logger.Info("Shutting down");
-        }
-
-        protected virtual void OnCall()
-        {
-            Logger.Info("Call " + CallStatus);
-
-            if (CallStatus == CallStatus.None)
-            {
-                SetLightBasedOnStatus();
-            }
-            else
-            {
-                SetLightBasedOnCall();
-            }
-        }
-
-        protected virtual void OnStatus()
-        {
-            Logger.Info("Status " + UserStatus);
-
-            if (CallStatus == CallStatus.None)
-            {
-                SetLightBasedOnStatus();
-            }
-            else
-            {
-                SetLightBasedOnCall();
-            }
-        }
-
-        protected virtual void OnBlyncLightConnected()
-        {
-            Logger.Info("BlyncLight Connected");
-
-            if (CallStatus == CallStatus.None)
-            {
-                SetLightBasedOnStatus();
-            }
-            else
-            {
-                SetLightBasedOnCall();
-            }
-        }
-
-        protected virtual void OnSkypeAttached()
-        {
-            Logger.Info("Skype Attached");
-
-            var status = Skype.CurrentUserStatus.ToUserStatus();
-            SetUserStatus(status);
-
-            if (Skype.ActiveCalls.Count > 0)
-            {
-                SetCallStatus(CallStatus.InProgress);
-            }
+            ApplicationLifecycleCallbacks.ForEach(handler => handler.OnShutdown());
         }
 
         #endregion
 
-        #region Skype Callbacks
+        #region Message Callbacks
 
-        private void Skype_AttachmentStatus(TAttachmentStatus Status)
+        protected virtual void OnSkypeCallStatusMessage(ISkypeMessage message)
         {
-            if (Logger.IsDebugEnabled)
+            var callStatusMessage = message as SkypeCallStatusMessage;
+            if (callStatusMessage != null)
             {
-                Logger.Debug("Skype_AttachmentStatus " + Status);
-            }
+                Logger.Info("Call Status " + callStatusMessage.Status);
 
-            if (Status == TAttachmentStatus.apiAttachSuccess)
-            {
-                OnSkypeAttached();
+                CallStatus = callStatusMessage.Status;
 
-                ((_ISkypeEvents_Event)Skype).AttachmentStatus -= Skype_AttachmentStatus;
+                UpdateBlyncLight();
             }
         }
 
-        private void Skype_MessageStatus(ChatMessage pMessage, TChatMessageStatus Status)
+        protected virtual void OnSkypeUserStatusMessage(ISkypeMessage message)
         {
-            if (Logger.IsDebugEnabled)
+            var userStatusMessage = message as SkypeUserStatusMessage;
+            if (userStatusMessage != null)
             {
-                Logger.Debug("Skype_MessageStatus " + Status);
-            }
+                Logger.Info("User Status " + userStatusMessage.Status);
 
-            if (Status == TChatMessageStatus.cmsSending)
+                UserStatus = userStatusMessage.Status;
+
+                UpdateBlyncLight();
+            }
+        }
+
+        protected virtual void OnBlyncLightMessage(IBlyncLightMessage message)
+        {
+            var blyncLightMessage = message as BlyncLightMessage;
+            if (blyncLightMessage != null)
             {
-                if (MsgAwayRegex.IsMatch(pMessage.Body))
+                if (blyncLightMessage.DeviceConnected)
                 {
-                    Skype.ChangeUserStatus(TUserStatus.cusAway);
-                    SetUserStatus(UserStatus.Away);
+                    Logger.Info("BlyncLight Connected");
+
+                    UpdateBlyncLight();
+                }
+                else
+                {
+                    Logger.Warn("BlyncLight Disonnected");
                 }
             }
-        }
-
-        private void Skype_UserStatus(TUserStatus Status)
-        {
-            if (Logger.IsDebugEnabled)
-            {
-                Logger.Debug("Skype_UserStatus " + Status);
-            }
-
-            var status = Status.ToUserStatus();
-
-            SetUserStatus(status);
-        }
-
-        private void Skype_CallStatus(Call pCall, TCallStatus Status)
-        {
-            if (Logger.IsDebugEnabled)
-            {
-                Logger.Debug("Skype_CallStatus " + Status);
-            }
-
-            var status = Status.ToCallStatus();
-
-            SetCallStatus(status);
-        } 
-
-        #endregion
-
-        #region USB Device Callbacks
-        void DeviceChangeEvent(object sender, EventArrivedEventArgs e)
-        {
-            InitBlyncDevices();
         } 
 
         #endregion
 
         #region Bootstrap
+
         protected void InitClient()
         {
+            if (Logger.IsDebugEnabled)
+            {
+                Logger.Debug("Client initialising");
+            }
+
+            SkypeMessageRouter.Subscribe(OnSkypeCallStatusMessage, x => x is SkypeCallStatusMessage);
+            SkypeMessageRouter.Subscribe(OnSkypeUserStatusMessage, x => x is SkypeUserStatusMessage);
+
+            BlyncLightMessageRouter.Subscribe(OnBlyncLightMessage, x => true);
+
             OnInitialise();
 
-            BlynclightController = new BlynclightController();
-
-            UserStatus = UserStatus.Connecting;
-
-            InitBlyncDevices();
-
-            Skype = new Skype();
-
-            //Attach async
-            ((_ISkypeEvents_Event)Skype).AttachmentStatus += Skype_AttachmentStatus;
-            Skype.Attach(8, false); 
-
-            UsbDeviceChangeWatcher = new ManagementEventWatcher();
-            var query = new WqlEventQuery("SELECT * FROM Win32_DeviceChangeEvent WHERE EventType = 2 or EventType = 3 GROUP WITHIN 1");
-            UsbDeviceChangeWatcher.EventArrived += DeviceChangeEvent;
-            UsbDeviceChangeWatcher.Query = query;
-
-            MsgAwayRegex = new Regex(@"^(\(pi\)|\(brb\)|\(coffee\))$", RegexOptions.IgnoreCase);
-
             isInitialised = true;
+
+            if (Logger.IsDebugEnabled)
+            {
+                Logger.Debug("Client initialised");
+            }
         }
+
         #endregion
 
-        #region Private Methods
+        #region Methods
 
-        private void SetCallStatus(CallStatus status)
+        private void UpdateBlyncLight()
         {
-            if (status != CallStatus)
+            if (CallStatus == CallStatus.None)
             {
-                CallStatus = status;
-                OnCall();
+                SetLightBasedOnUserStatus();
+            }
+            else
+            {
+                SetLightBasedOnCallStatus();
             }
         }
 
-        private void SetUserStatus(UserStatus status)
-        {
-            if (status != UserStatus)
-            {
-                UserStatus = status;
-                OnStatus();
-            }
-        }
-
-        private void SetLightBasedOnStatus()
+        private void SetLightBasedOnUserStatus()
         {
             switch (UserStatus)
             {
@@ -338,7 +229,7 @@ namespace BlyncLightForSkype.Client
             }
         }
 
-        private void SetLightBasedOnCall()
+        private void SetLightBasedOnCallStatus()
         {
             switch (CallStatus)
             {
@@ -348,24 +239,9 @@ namespace BlyncLightForSkype.Client
                 case CallStatus.Ringing:
                     BlynclightController.SetStatusRinging();
                     break;
-                case CallStatus.Missed:
-                    BlynclightController.SetStatusCallMissed();
-                    break;
             }
         }
 
-        private void InitBlyncDevices()
-        {
-            var deviceCount = BlynclightController.InitBlyncDevices();
-            if (deviceCount == 0)
-            {
-                Logger.Warn("BlyncLight Disonnected");
-            }
-            else
-            {
-                OnBlyncLightConnected();
-            }
-        } 
         #endregion
     }
 }

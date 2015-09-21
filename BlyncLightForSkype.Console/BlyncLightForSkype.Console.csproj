@@ -51,7 +51,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IoC.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -60,6 +59,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BlyncLightForSkype.App\BlyncLightForSkype.App.csproj">
+      <Project>{2a356ef7-29e9-4958-b696-9efd3389e727}</Project>
+      <Name>BlyncLightForSkype.App</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BlyncLightForSkype.Client\BlyncLightForSkype.Client.csproj">
       <Project>{3f0f92c2-597d-451b-9222-b9c5b070ab42}</Project>
       <Name>BlyncLightForSkype.Client</Name>

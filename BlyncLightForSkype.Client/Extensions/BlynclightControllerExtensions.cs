@@ -1,4 +1,5 @@
 ﻿using Blynclight;
+using BlyncLightForSkype.Client.Models;
 
 namespace BlyncLightForSkype.Client.Extensions
 {

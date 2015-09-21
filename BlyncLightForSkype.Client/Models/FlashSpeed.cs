@@ -1,4 +1,4 @@
-﻿namespace BlyncLightForSkype.Client
+﻿namespace BlyncLightForSkype.Client.Models
 {
     public enum FlashSpeed
     {

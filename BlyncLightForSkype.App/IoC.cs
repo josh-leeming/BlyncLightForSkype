@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Blynclight;
 using BlyncLightForSkype.Client;
 using BlyncLightForSkype.Client.Interfaces;
-using SKYPE4COMLib;
+using BlyncLightForSkype.Client.SkypeBehaviours;
 using TinyIoC;
 
 namespace BlyncLightForSkype.App
@@ -18,21 +19,30 @@ namespace BlyncLightForSkype.App
             container.Register(typeof(IMessageRouter<ISkypeMessage>), typeof(SkypeMessageRouter)).AsSingleton();
             container.Register(typeof(IMessageRouter<IBlyncLightMessage>), typeof(BlyncLightMessageRouter)).AsSingleton();
 
-            container.Register(typeof(SkypeManager),
-                new SkypeManager(container.Resolve<ILogHandler>(),
-                    container.Resolve<IMessageRouter<ISkypeMessage>>()));
-
-            container.Register(typeof(BlyncLightManager),
-                new BlyncLightManager(container.Resolve<ILogHandler>(),
-                    container.Resolve<IMessageRouter<IBlyncLightMessage>>(),
-                    container.Resolve<BlynclightController>()));
-
             container.RegisterMultiple<IClientLifecycleCallbackHandler>(new List<Type>()
             {
                 typeof (SkypeManager),
                 typeof (BlyncLightManager)
 
             }).AsSingleton();
+
+            container.RegisterMultiple<ISkypeBehaviour>(new List<Type>()
+            {
+                typeof (CallStatusNotifier),
+                typeof (UserStatusNotifier),
+                typeof (OnBreakBehaviour),
+                typeof (OnLunchBehaviour)
+            });
+
+            container.Register(typeof(SkypeManager),
+                new SkypeManager(container.Resolve<ILogHandler>(),
+                    container.Resolve<IMessageRouter<ISkypeMessage>>(),
+                    container.ResolveAll<ISkypeBehaviour>().OrderByDescending(s => s.Priority).ToList()));
+
+            container.Register(typeof(BlyncLightManager),
+                new BlyncLightManager(container.Resolve<ILogHandler>(),
+                    container.Resolve<IMessageRouter<IBlyncLightMessage>>(),
+                    container.Resolve<BlynclightController>()));
 
             container.Register(typeof(BlyncLightForSkypeClient),
                 new BlyncLightForSkypeClient());

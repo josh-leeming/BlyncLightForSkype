@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.Generic;
 using BlyncLightForSkype.Client.Extensions;
 using BlyncLightForSkype.Client.Interfaces;
 using BlyncLightForSkype.Client.Messages;
@@ -18,6 +18,8 @@ namespace BlyncLightForSkype.Client
 
         public IMessageRouter<ISkypeMessage> MessageRouter { get; set; }
 
+        public List<ISkypeBehaviour> AttachedBehaviours { get; set; }
+
         #endregion
 
         #region Props
@@ -25,21 +27,17 @@ namespace BlyncLightForSkype.Client
         /// <summary>
         /// Skype4Com
         /// </summary>
-        private readonly Skype Skype = new Skype();
-
-        /// <summary>
-        /// Regular expression object for checking messages and changing status to away
-        /// </summary>
-        private readonly Regex MsgAwayRegex = new Regex(@"^(\()+(pi|brb|coffee)+(\))$", RegexOptions.IgnoreCase);
+        public readonly Skype Skype = new Skype();
 
         #endregion
 
         #region Ctor
 
-        public SkypeManager(ILogHandler logger, IMessageRouter<ISkypeMessage> messageRouter)
+        public SkypeManager(ILogHandler logger, IMessageRouter<ISkypeMessage> messageRouter, List<ISkypeBehaviour> skypeBehaviours)
         {
             Logger = logger;
             MessageRouter = messageRouter;
+            AttachedBehaviours = skypeBehaviours;
         }
 
         #endregion
@@ -56,7 +54,9 @@ namespace BlyncLightForSkype.Client
             ((_ISkypeEvents_Event)Skype).AttachmentStatus += Skype_AttachmentStatus;
 
             //Attach async
-            Skype.Attach(8, false); 
+            Skype.Attach(8, false);
+
+            AttachedBehaviours.ForEach(behaviour => behaviour.InitBehaviour(this));
         }
 
         public void OnStartup()
@@ -66,9 +66,7 @@ namespace BlyncLightForSkype.Client
                 Logger.Debug("Skype Manager starting");
             }
 
-            Skype.UserStatus += Skype_UserStatus;
-            Skype.CallStatus += Skype_CallStatus;
-            Skype.MessageStatus += Skype_MessageStatus;
+            AttachedBehaviours.ForEach(behaviour => behaviour.Start());
         }
 
         public void OnShutdown()
@@ -78,9 +76,7 @@ namespace BlyncLightForSkype.Client
                 Logger.Debug("Skype Manager shutting down");
             }
 
-            Skype.UserStatus -= Skype_UserStatus;
-            Skype.CallStatus -= Skype_CallStatus;
-            Skype.MessageStatus -= Skype_MessageStatus;
+            AttachedBehaviours.ForEach(behaviour => behaviour.Stop());
         }
 
         #endregion
@@ -96,7 +92,15 @@ namespace BlyncLightForSkype.Client
 
             if (Status == TAttachmentStatus.apiAttachSuccess)
             {
-                OnSkypeAttached();
+                Logger.Info("Skype Attached");
+
+                var userStatus = Skype.CurrentUserStatus.ToUserStatus();
+
+                PublishUserStatus(userStatus);
+
+                var callStatus = Skype.ActiveCalls.Count > 0 ? CallStatus.InProgress : CallStatus.None;
+
+                PublishCallStatus(callStatus);
             }
             else if (Status == TAttachmentStatus.apiAttachAvailable)
             {
@@ -108,67 +112,11 @@ namespace BlyncLightForSkype.Client
             }
         }
 
-        //TODO, inject Skype Message Handlers
-        private void Skype_MessageStatus(ChatMessage pMessage, TChatMessageStatus Status)
-        {
-            if (Logger.IsDebugEnabled)
-            {
-                Logger.Debug("Skype_MessageStatus " + Status);
-            }
-
-            if (Status == TChatMessageStatus.cmsSending)
-            {
-                if (MsgAwayRegex.IsMatch(pMessage.Body))
-                {
-                    Skype.ChangeUserStatus(TUserStatus.cusAway);
-                }
-            }
-        }
-
-        //TODO, inject Skype User Status Handlers
-        private void Skype_UserStatus(TUserStatus Status)
-        {
-            if (Logger.IsDebugEnabled)
-            {
-                Logger.Debug("Skype_UserStatus " + Status);
-            }
-
-            var userStatus = Status.ToUserStatus();
-
-            PublishUserStatus(userStatus);
-        }
-
-        //TODO, inject Skype Call Status Handlers
-        private void Skype_CallStatus(Call pCall, TCallStatus Status)
-        {
-            if (Logger.IsDebugEnabled)
-            {
-                Logger.Debug("Skype_CallStatus " + Status);
-            }
-
-            var callStatus = Status.ToCallStatus();
-
-            PublishCallStatus(callStatus);
-        }
-
         #endregion
 
         #region Methods
 
-        private void OnSkypeAttached()
-        {
-            Logger.Info("Skype Attached");
-
-            var userStatus = Skype.CurrentUserStatus.ToUserStatus();
-
-            PublishUserStatus(userStatus);
-
-            var callStatus = Skype.ActiveCalls.Count > 0 ? CallStatus.InProgress : CallStatus.None;
-
-            PublishCallStatus(callStatus);
-        }
-
-        private void PublishCallStatus(CallStatus status)
+        public void PublishCallStatus(CallStatus status)
         {
             MessageRouter.Publish(new SkypeCallStatusMessage
             {
@@ -176,7 +124,7 @@ namespace BlyncLightForSkype.Client
             });
         }
 
-        private void PublishUserStatus(UserStatus status)
+        public void PublishUserStatus(UserStatus status)
         {
             MessageRouter.Publish(new SkypeUserStatusMessage
             {

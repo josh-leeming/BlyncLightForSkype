@@ -48,7 +48,9 @@
     <Compile Include="BlyncLightManager.cs" />
     <Compile Include="Interfaces\IClientLifecycleCallbackHandler.cs" />
     <Compile Include="Interfaces\IBlyncLightMessage.cs" />
+    <Compile Include="Interfaces\ISkypeBehaviour.cs" />
     <Compile Include="Interfaces\ISkypeMessage.cs" />
+    <Compile Include="Models\SkypeBehaviourPriority.cs" />
     <Compile Include="Messages\BlyncLightMessage.cs" />
     <Compile Include="Messages\SkypeCallStatusMessage.cs" />
     <Compile Include="Messages\SkypeUserStatusMessage.cs" />
@@ -63,6 +65,10 @@
     <Compile Include="Messages\MessageSubscriptionToken.cs" />
     <Compile Include="Messages\SubscriptionPriority.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SkypeBehaviours\CallStatusNotifier.cs" />
+    <Compile Include="SkypeBehaviours\OnLunchBehaviour.cs" />
+    <Compile Include="SkypeBehaviours\OnBreakBehaviour.cs" />
+    <Compile Include="SkypeBehaviours\UserStatusNotifier.cs" />
     <Compile Include="SkypeManager.cs" />
     <Compile Include="SkypeMessageRouter.cs" />
     <Compile Include="TinyIoC.cs" />

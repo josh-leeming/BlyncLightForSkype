@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Management;
 using Blynclight;
 using BlyncLightForSkype.Client.Extensions;
 using BlyncLightForSkype.Client.Interfaces;
@@ -127,9 +126,14 @@ namespace BlyncLightForSkype.Client
             {
                 Logger.Info("Call Status " + callStatusMessage.Status);
 
-                CallStatus = callStatusMessage.Status;
-
-                UpdateBlyncLight();
+                if (callStatusMessage.Status == CallStatus.Missed)
+                {
+                    //TODO handle missed calls
+                }
+                else {
+                    CallStatus = callStatusMessage.Status;
+                    UpdateBlyncLight();
+                }
             }
         }
 

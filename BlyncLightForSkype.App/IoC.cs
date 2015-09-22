@@ -31,7 +31,8 @@ namespace BlyncLightForSkype.App
                 typeof (CallStatusNotifier),
                 typeof (UserStatusNotifier),
                 typeof (OnBreakBehaviour),
-                typeof (OnLunchBehaviour)
+                typeof (OnLunchBehaviour),
+                typeof (OnCallBehaviour)
             });
 
             container.Register(typeof(SkypeManager),

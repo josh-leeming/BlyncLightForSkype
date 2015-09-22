@@ -55,7 +55,7 @@ namespace BlyncLightForSkype.Client
         {
             if (Logger.IsDebugEnabled)
             {
-                Logger.Debug("Device Manager initialising");
+                Logger.Debug("Initialising Device Manager");
             }
 
             UsbDeviceChangeWatcher = new ManagementEventWatcher();
@@ -68,7 +68,7 @@ namespace BlyncLightForSkype.Client
         {
             if (Logger.IsDebugEnabled)
             {
-                Logger.Debug("Device Manager starting");
+                Logger.Debug("Starting Device Manager");
             }
 
             InitBlyncDevices();
@@ -80,7 +80,7 @@ namespace BlyncLightForSkype.Client
         {
             if (Logger.IsDebugEnabled)
             {
-                Logger.Debug("Device Manager shutting down");
+                Logger.Debug("Stopping Device Manager");
             }
 
             UsbDeviceChangeWatcher.Stop();

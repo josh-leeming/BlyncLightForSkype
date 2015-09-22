@@ -48,7 +48,7 @@ namespace BlyncLightForSkype.Client
         {
             if (Logger.IsDebugEnabled)
             {
-                Logger.Debug("Skype Manager initialising");
+                Logger.Debug("Initialising Skype Manager");
             }
 
             ((_ISkypeEvents_Event)Skype).AttachmentStatus += Skype_AttachmentStatus;
@@ -63,7 +63,7 @@ namespace BlyncLightForSkype.Client
         {
             if (Logger.IsDebugEnabled)
             {
-                Logger.Debug("Skype Manager starting");
+                Logger.Debug("Starting Skype Manager");
             }
 
             AttachedBehaviours.ForEach(behaviour => behaviour.Start());
@@ -73,7 +73,7 @@ namespace BlyncLightForSkype.Client
         {
             if (Logger.IsDebugEnabled)
             {
-                Logger.Debug("Skype Manager shutting down");
+                Logger.Debug("Stopping Skype Manager");
             }
 
             AttachedBehaviours.ForEach(behaviour => behaviour.Stop());

@@ -30,7 +30,7 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
 
             if (skypeManager.Logger.IsDebugEnabled)
             {
-                skypeManager.Logger.Debug("UserStatusNotifier initialised");
+                skypeManager.Logger.Debug("Initialised UserStatusNotifier");
             }
         }
 

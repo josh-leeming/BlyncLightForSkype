@@ -66,6 +66,7 @@
     <Compile Include="Messages\SubscriptionPriority.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SkypeBehaviours\CallStatusNotifier.cs" />
+    <Compile Include="SkypeBehaviours\OnCallBehaviour.cs" />
     <Compile Include="SkypeBehaviours\OnLunchBehaviour.cs" />
     <Compile Include="SkypeBehaviours\OnBreakBehaviour.cs" />
     <Compile Include="SkypeBehaviours\UserStatusNotifier.cs" />

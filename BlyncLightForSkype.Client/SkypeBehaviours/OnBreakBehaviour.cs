@@ -40,7 +40,7 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
 
             if (skypeManager.Logger.IsDebugEnabled)
             {
-                skypeManager.Logger.Debug("OnBreakBehaviour initialised");
+                skypeManager.Logger.Debug("Initialised OnBreakBehaviour");
             }
         }
 

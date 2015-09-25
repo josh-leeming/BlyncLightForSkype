@@ -20,7 +20,7 @@ namespace BlyncLightForSkype.Client.BlyncLightBehaviours
         /// <summary>
         /// True if the light is active
         /// </summary>
-        private bool blyncLightActive = true;
+        private bool blyncLightActive = false;
 
         private Timer startTimer;
 

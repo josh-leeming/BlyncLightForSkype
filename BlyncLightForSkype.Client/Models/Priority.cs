@@ -1,6 +1,6 @@
 ﻿namespace BlyncLightForSkype.Client.Models
 {
-    public enum SkypeBehaviourPriority
+    public enum Priority
     {
         Meh, Low, Normal, High
     }

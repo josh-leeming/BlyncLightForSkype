@@ -11,6 +11,7 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
     public class OnLunchBehaviour : ISkypeBehaviour
     {
         #region Props
+
         /// <summary>
         /// Reference to SkypeManager object
         /// </summary>
@@ -20,23 +21,28 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
         /// </summary>
         private readonly Regex OnLunchRegex = new Regex(@"^\(pi\)$", RegexOptions.IgnoreCase);
         /// <summary>
+        /// Text to display whilst on lunch
+        /// </summary>
+        private const string OnLunchMoodText = "@lunch";
+        /// <summary>
         /// True if behaviour has detected OnLunchRegex
         /// </summary>
         private bool onLunch;
+
         #endregion
 
         #region Ctor
 
         public OnLunchBehaviour()
         {
-            Priority = SkypeBehaviourPriority.Meh;
+            Priority = Priority.Meh;
         } 
 
         #endregion
 
         #region ISkypeBehaviour
 
-        public SkypeBehaviourPriority Priority { get; private set; }
+        public Priority Priority { get; private set; }
 
         public void InitBehaviour(SkypeManager manager)
         {
@@ -48,12 +54,12 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
             }
         }
 
-        public void Start()
+        public void EnableBehaviour()
         {
             skypeManager.Skype.MessageStatus += Skype_MessageStatus;
         }
 
-        public void Stop()
+        public void DisableBehaviour()
         {
             skypeManager.Skype.MessageStatus -= Skype_MessageStatus;
         } 
@@ -61,6 +67,7 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
         #endregion
 
         #region Skype Callbacks
+
         private void Skype_MessageStatus(ChatMessage pMessage, TChatMessageStatus Status)
         {
             if (Status == TChatMessageStatus.cmsSending)
@@ -82,9 +89,11 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
                     break;
             }
         } 
+
         #endregion
 
         #region Methods
+
         private void OnLunch(bool lunch)
         {
             onLunch = lunch;
@@ -97,13 +106,19 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
             if (onLunch)
             {
                 skypeManager.Skype.ChangeUserStatus(TUserStatus.cusAway);
+                skypeManager.Skype.CurrentUserProfile.MoodText = OnLunchMoodText;
                 skypeManager.Skype.UserStatus += Skype_UserStatus;
             }
             else
             {
                 skypeManager.Skype.UserStatus -= Skype_UserStatus;
+                if (skypeManager.Skype.CurrentUserProfile.MoodText.Equals(OnLunchMoodText))
+                {
+                    skypeManager.Skype.CurrentUserProfile.MoodText = "";
+                }
             }
         } 
+
         #endregion
     } 
 }

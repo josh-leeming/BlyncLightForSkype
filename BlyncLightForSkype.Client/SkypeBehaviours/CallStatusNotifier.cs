@@ -8,21 +8,26 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
     public class CallStatusNotifier : ISkypeBehaviour
     {
         #region Props
+
         /// <summary>
         /// Reference to SkypeManager object
         /// </summary>
         private SkypeManager skypeManager; 
+
         #endregion
 
         #region Ctor
+
         public CallStatusNotifier()
         {
-            Priority = SkypeBehaviourPriority.Normal;
+            Priority = Priority.Normal;
         } 
+
         #endregion
 
         #region ISkypeBehaviour
-        public SkypeBehaviourPriority Priority { get; private set; }
+
+        public Priority Priority { get; private set; }
 
         public void InitBehaviour(SkypeManager manager)
         {
@@ -34,12 +39,12 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
             }
         }
 
-        public void Start()
+        public void EnableBehaviour()
         {
             skypeManager.Skype.CallStatus += Skype_CallStatus;
         }
 
-        public void Stop()
+        public void DisableBehaviour()
         {
             skypeManager.Skype.CallStatus -= Skype_CallStatus;
         }
@@ -47,6 +52,7 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
         #endregion
 
         #region Skype Callbacks
+
         private void Skype_CallStatus(Call pCall, TCallStatus Status)
         {
             if (skypeManager.Logger.IsDebugEnabled)
@@ -58,6 +64,7 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
 
             skypeManager.PublishCallStatus(callStatus);
         } 
+
         #endregion
     }
 }

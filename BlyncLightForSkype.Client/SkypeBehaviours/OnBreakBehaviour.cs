@@ -11,6 +11,7 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
     public class OnBreakBehaviour : ISkypeBehaviour
     {
         #region Props
+
         /// <summary>
         /// Reference to SkypeManager object
         /// </summary>
@@ -18,21 +19,22 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
         /// <summary>
         /// Regular expression object for checking messages and changing status to away
         /// </summary>
-        private readonly Regex OnBreakRegex = new Regex(@"^(\()+(brb|coffee)+(\))$", RegexOptions.IgnoreCase);
+        private readonly Regex OnBreakRegex = new Regex(@"^\(?(brb|coffee)\)?$", RegexOptions.IgnoreCase);
+
         #endregion
 
         #region Ctor
 
         public OnBreakBehaviour()
         {
-            Priority = SkypeBehaviourPriority.Meh;
+            Priority = Priority.Meh;
         } 
 
         #endregion
 
         #region ISkypeBehaviour
 
-        public SkypeBehaviourPriority Priority { get; private set; }
+        public Priority Priority { get; private set; }
 
         public void InitBehaviour(SkypeManager manager)
         {
@@ -44,12 +46,12 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
             }
         }
 
-        public void Start()
+        public void EnableBehaviour()
         {
             skypeManager.Skype.MessageStatus += Skype_MessageStatus;
         }
 
-        public void Stop()
+        public void DisableBehaviour()
         {
             skypeManager.Skype.MessageStatus -= Skype_MessageStatus;
         } 
@@ -57,6 +59,7 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
         #endregion
 
         #region Skype Callbacks
+
         private void Skype_MessageStatus(ChatMessage pMessage, TChatMessageStatus Status)
         {
             if (Status == TChatMessageStatus.cmsSending)
@@ -72,6 +75,7 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
                 }
             }
         }
+
         #endregion
     } 
 }

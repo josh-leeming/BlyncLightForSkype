@@ -3,8 +3,8 @@ using BlyncLightForSkype.Client.Models;
 
 namespace BlyncLightForSkype.Client.Messages
 {
-    public class SkypeCallStatusMessage : IMessage
+    public class BlyncLightDeviceStatusMessage : IMessage
     {
-        public CallStatus Status { get; set; }
+        public DeviceStatus Status { get; set; }
     }
 }

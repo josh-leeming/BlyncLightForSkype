@@ -16,7 +16,7 @@ namespace BlyncLightForSkype.Client
 
         public ILogHandler Logger { get; set; }
 
-        public IMessageRouter<ISkypeMessage> MessageRouter { get; set; }
+        public IMessageRouter<IMessage> MessageRouter { get; set; }
 
         public List<ISkypeBehaviour> AttachedBehaviours { get; set; }
 
@@ -33,22 +33,25 @@ namespace BlyncLightForSkype.Client
 
         #region Ctor
 
-        public SkypeManager(ILogHandler logger, IMessageRouter<ISkypeMessage> messageRouter, List<ISkypeBehaviour> skypeBehaviours)
+        public SkypeManager(ILogHandler logger, IMessageRouter<IMessage> messageRouter, List<ISkypeBehaviour> skypeBehaviours)
         {
             Logger = logger;
             MessageRouter = messageRouter;
             AttachedBehaviours = skypeBehaviours;
+            Priority = Priority.Normal;
         }
 
         #endregion
 
         #region Lifecycle Callbacks
 
+        public Priority Priority { get; private set; }
+
         public void OnInitialise()
         {
             if (Logger.IsDebugEnabled)
             {
-                Logger.Debug("Initialising Skype Manager");
+                Logger.Debug("Skype Manager Initialising");
             }
 
             ((_ISkypeEvents_Event)Skype).AttachmentStatus += Skype_AttachmentStatus;
@@ -63,20 +66,20 @@ namespace BlyncLightForSkype.Client
         {
             if (Logger.IsDebugEnabled)
             {
-                Logger.Debug("Starting Skype Manager");
+                Logger.Debug("Skype Manager Starting");
             }
 
-            AttachedBehaviours.ForEach(behaviour => behaviour.Start());
+            AttachedBehaviours.ForEach(behaviour => behaviour.EnableBehaviour());
         }
 
         public void OnShutdown()
         {
             if (Logger.IsDebugEnabled)
             {
-                Logger.Debug("Stopping Skype Manager");
+                Logger.Debug("Skype Manager Stopping");
             }
 
-            AttachedBehaviours.ForEach(behaviour => behaviour.Stop());
+            AttachedBehaviours.ForEach(behaviour => behaviour.DisableBehaviour());
         }
 
         #endregion
@@ -94,13 +97,13 @@ namespace BlyncLightForSkype.Client
             {
                 Logger.Info("Skype Attached");
 
-                var userStatus = Skype.CurrentUserStatus.ToUserStatus();
-
-                PublishUserStatus(userStatus);
-
                 var callStatus = Skype.ActiveCalls.Count > 0 ? CallStatus.InProgress : CallStatus.None;
 
                 PublishCallStatus(callStatus);
+
+                var userStatus = Skype.CurrentUserStatus.ToUserStatus();
+
+                PublishUserStatus(userStatus);
             }
             else if (Status == TAttachmentStatus.apiAttachAvailable)
             {

@@ -3,7 +3,7 @@ using BlyncLightForSkype.Client.Models;
 
 namespace BlyncLightForSkype.Client.Messages
 {
-    public class SkypeUserStatusMessage : ISkypeMessage
+    public class SkypeUserStatusMessage : IMessage
     {
         public UserStatus Status { get; set; }
     }

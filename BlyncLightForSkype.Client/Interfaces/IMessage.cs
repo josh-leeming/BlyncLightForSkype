@@ -3,7 +3,7 @@
     /// <summary>
     /// Stereotype
     /// </summary>
-    public interface ISkypeMessage
+    public interface IMessage
     {
     }
 }

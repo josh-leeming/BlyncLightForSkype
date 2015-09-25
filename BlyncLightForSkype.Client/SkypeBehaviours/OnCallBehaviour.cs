@@ -5,11 +5,12 @@ using SKYPE4COMLib;
 namespace BlyncLightForSkype.Client.SkypeBehaviours
 {
     /// <summary>
-    /// Behaviour that changes status to Busy/DoNotDisturb while on a call
+    /// Behaviour that changes status to Busy/DoNotDisturb when online for the duration of a call
     /// </summary>
     public class OnCallBehaviour : ISkypeBehaviour
     {
         #region Props
+
         /// <summary>
         /// Reference to SkypeManager object
         /// </summary>
@@ -22,17 +23,21 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
         /// UserStatus prior to going on call
         /// </summary>
         private TUserStatus priorUserStatus;
+
         #endregion
 
         #region Ctor
+
         public OnCallBehaviour()
         {
-            Priority = SkypeBehaviourPriority.Normal;
+            Priority = Priority.Normal;
         } 
+
         #endregion
 
         #region ISkypeBehaviour
-        public SkypeBehaviourPriority Priority { get; private set; }
+
+        public Priority Priority { get; private set; }
 
         public void InitBehaviour(SkypeManager manager)
         {
@@ -42,19 +47,14 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
             {
                 skypeManager.Logger.Debug("Initialised OnCallBehaviour");
             }
-
-            if (skypeManager.Skype.ActiveCalls.Count > 0)
-            {
-                SetOnCall(true);
-            }
         }
 
-        public void Start()
+        public void EnableBehaviour()
         {
             skypeManager.Skype.CallStatus += Skype_CallStatus;
         }
 
-        public void Stop()
+        public void DisableBehaviour()
         {
             skypeManager.Skype.CallStatus -= Skype_CallStatus;
         }
@@ -62,13 +62,21 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
         #endregion
 
         #region Skype Callbacks
+
         private void Skype_CallStatus(Call pCall, TCallStatus Status)
         {
             SetOnCall(Status == TCallStatus.clsInProgress);
+        }
+
+        private void Skype_UserStatus(TUserStatus Status)
+        {
+            priorUserStatus = Status;
         } 
+
         #endregion
 
         #region Methods
+
         private void SetOnCall(bool call)
         {
             if (onCall != call)
@@ -83,14 +91,29 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
                 if (onCall)
                 {
                     priorUserStatus = skypeManager.Skype.CurrentUserStatus;
-                    skypeManager.Skype.ChangeUserStatus(TUserStatus.cusDoNotDisturb);
+
+                    //change to busy only if we're online
+                    if (priorUserStatus == TUserStatus.cusOnline)
+                    {
+                        skypeManager.Skype.ChangeUserStatus(TUserStatus.cusDoNotDisturb);
+                    }
+                    
+                    //monitor explicit status changes
+                    skypeManager.Skype.UserStatus += Skype_UserStatus;
                 }
                 else
                 {
-                    skypeManager.Skype.ChangeUserStatus(priorUserStatus);
+                    skypeManager.Skype.UserStatus -= Skype_UserStatus;
+
+                    //update status post call if prior status is different
+                    if (priorUserStatus != skypeManager.Skype.CurrentUserStatus)
+                    {
+                        skypeManager.Skype.ChangeUserStatus(priorUserStatus);
+                    }
                 }
             }
         }  
+
         #endregion
     }
 }

@@ -43,21 +43,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BlyncLightBehaviours\BlyncLightScheduler.cs" />
+    <Compile Include="BlyncLightBehaviours\SkypeStatusResponder.cs" />
     <Compile Include="BlyncLightForSkypeClient.cs" />
-    <Compile Include="BlyncLightMessageRouter.cs" />
     <Compile Include="BlyncLightManager.cs" />
+    <Compile Include="Extensions\BlynclightControllerExtensions.cs" />
+    <Compile Include="Interfaces\IBlyncLightBehaviour.cs" />
     <Compile Include="Interfaces\IClientLifecycleCallbackHandler.cs" />
-    <Compile Include="Interfaces\IBlyncLightMessage.cs" />
     <Compile Include="Interfaces\ISkypeBehaviour.cs" />
-    <Compile Include="Interfaces\ISkypeMessage.cs" />
-    <Compile Include="Models\SkypeBehaviourPriority.cs" />
-    <Compile Include="Messages\BlyncLightMessage.cs" />
+    <Compile Include="Interfaces\IMessage.cs" />
+    <Compile Include="Messages\BlyncLightDeviceStatusMessage.cs" />
+    <Compile Include="Models\Priority.cs" />
     <Compile Include="Messages\SkypeCallStatusMessage.cs" />
     <Compile Include="Messages\SkypeUserStatusMessage.cs" />
     <Compile Include="Models\CallStatus.cs" />
-    <Compile Include="Extensions\BlynclightControllerExtensions.cs" />
     <Compile Include="Extensions\SkypeCallStatusExtensions.cs" />
     <Compile Include="Extensions\SkypeUserStatusExtensions.cs" />
+    <Compile Include="Models\DeviceStatus.cs" />
     <Compile Include="Models\FlashSpeed.cs" />
     <Compile Include="Interfaces\ILogHandler.cs" />
     <Compile Include="Interfaces\IMessageRouter.cs" />
@@ -71,7 +73,7 @@
     <Compile Include="SkypeBehaviours\OnBreakBehaviour.cs" />
     <Compile Include="SkypeBehaviours\UserStatusNotifier.cs" />
     <Compile Include="SkypeManager.cs" />
-    <Compile Include="SkypeMessageRouter.cs" />
+    <Compile Include="MessageRouter.cs" />
     <Compile Include="TinyIoC.cs" />
     <Compile Include="Models\UserStatus.cs" />
   </ItemGroup>
@@ -86,6 +88,7 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

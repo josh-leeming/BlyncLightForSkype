@@ -17,12 +17,13 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
         #region Ctor
         public UserStatusNotifier()
         {
-            Priority = SkypeBehaviourPriority.Normal;
+            Priority = Priority.Normal;
         } 
         #endregion
 
         #region ISkypeBehaviour
-        public SkypeBehaviourPriority Priority { get; private set; }
+
+        public Priority Priority { get; private set; }
 
         public void InitBehaviour(SkypeManager manager)
         {
@@ -34,15 +35,16 @@ namespace BlyncLightForSkype.Client.SkypeBehaviours
             }
         }
 
-        public void Start()
+        public void EnableBehaviour()
         {
             skypeManager.Skype.UserStatus += Skype_UserStatus;
         }
 
-        public void Stop()
+        public void DisableBehaviour()
         {
             skypeManager.Skype.UserStatus -= Skype_UserStatus;
         } 
+
         #endregion
 
         #region Skype Callbacks

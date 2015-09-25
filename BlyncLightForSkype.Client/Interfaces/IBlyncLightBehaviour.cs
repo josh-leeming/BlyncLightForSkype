@@ -2,11 +2,11 @@
 
 namespace BlyncLightForSkype.Client.Interfaces
 {
-    public interface ISkypeBehaviour
+    public interface IBlyncLightBehaviour
     {
         Priority Priority { get; }
 
-        void InitBehaviour(SkypeManager manager);
+        void InitBehaviour(BlyncLightManager manager);
         void EnableBehaviour();
         void DisableBehaviour();
     }
